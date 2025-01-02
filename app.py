@@ -3,6 +3,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from flask_cors import CORS  
 import datetime  
 import json
+import csv
 
 with open("./serversettings.json", 'r') as file:
     deviceData = json.load(file)
@@ -59,13 +60,21 @@ def save_data():
         return jsonify({"msg": "No data provided!"}), 400  
 
     try:  
-        with open(report_file, 'a', encoding='utf-8') as f:  # UTF-8 ile açıyoruz  
-            json.dump(data, f, ensure_ascii=False)  # Türkçe karakterleri doğru kaydet  
-            f.write('\n')  # Her kayıttan sonra yeni bir satır ekliyoruz  
+        # CSV dosyasına eklemek için aç  
+        with open(report_file, 'a',  encoding='utf-8-sig', newline='') as f:  
+            writer = csv.writer(f)  
+            
+            # Eğer CSV dosyası boşsa, başlıklar ekleyin  
+            if f.tell() == 0:  
+                headers = data.keys()  # JSON verisinin anahtarları başlık olarak kullanılacak  
+                writer.writerow(headers)  
+
+            writer.writerow(data.values())  # JSON verisinin değerlerini yaz  
+
     except Exception as e:  
         return jsonify({"msg": "Error saving data!", "error": str(e)}), 500  
 
-    return jsonify({"msg": "Data saved successfully!"}), 200 
+    return jsonify({"msg": "Data saved successfully!"}), 200  
 
 
 def read_command_from_file(filename):  
